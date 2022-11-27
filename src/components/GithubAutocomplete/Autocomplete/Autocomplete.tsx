@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { RiLoader4Line } from "react-icons/ri";
 import { debounce } from "lodash";
@@ -18,6 +18,57 @@ interface AutocompleteProps {
   search: (query: string) => Promise<SearchReturnValue>;
 }
 
+interface ReducerState {
+  isLoading: boolean;
+  isNoResults: boolean;
+  resultItems: AutocompleteResultItem[];
+  error?: string;
+}
+
+enum ActionTypes {
+  CHANGE_LT_3 = "CHANGE_LT_3",
+  CHANGE_GTE_3 = "CHANGE_GTE_3",
+  SEARCH_WITH_RESULT = "SEARCH_WITH_RESULT",
+  SEARCH_WITHOUT_RESULT = "SEARCH_WITHOUT_RESULT",
+  SEARCH_WITH_ERROR = "SEARCH_WITH_ERROR",
+}
+
+type ReducerActions =
+  | { type: ActionTypes.CHANGE_LT_3 }
+  | { type: ActionTypes.CHANGE_GTE_3 }
+  | { type: ActionTypes.SEARCH_WITH_RESULT; payload: AutocompleteResultItem[] }
+  | { type: ActionTypes.SEARCH_WITHOUT_RESULT }
+  | { type: ActionTypes.SEARCH_WITH_ERROR; payload: string };
+
+// Using reducer since there is a lot of dependency between these values
+// and it's easier to control and see what a given action causes
+const autocompleteStateReducer = (state: ReducerState, action: ReducerActions) => {
+  switch (action.type) {
+    case ActionTypes.CHANGE_LT_3:
+      return { isLoading: false, isNoResults: false, resultItems: [], error: undefined };
+    case ActionTypes.CHANGE_GTE_3:
+      return {
+        isLoading: true,
+        isNoResults: state.isNoResults,
+        resultItems: state.resultItems,
+        error: state.error,
+      };
+    case ActionTypes.SEARCH_WITH_RESULT:
+      return {
+        isLoading: false,
+        isNoResults: false,
+        resultItems: action.payload,
+        error: undefined,
+      };
+    case ActionTypes.SEARCH_WITHOUT_RESULT:
+      return { isLoading: false, isNoResults: true, resultItems: [], error: undefined };
+    case ActionTypes.SEARCH_WITH_ERROR:
+      return { isLoading: false, isNoResults: false, resultItems: [], error: action.payload };
+    default:
+      return { isLoading: false, isNoResults: false, resultItems: [], error: undefined };
+  }
+};
+
 // Autocomplete on its own only handles:
 // - The logic of typing and when to initiate/cancel the search (using debounce)
 // - Following and giving feedback about the progress (loading, error, no results)
@@ -26,32 +77,27 @@ interface AutocompleteProps {
 // It's the job of its parent to provide an async search function that should return either the result items or error message.
 export const Autocomplete = (props: AutocompleteProps) => {
   const [searchValue, setSearchValue] = useState("");
-  const [resultItems, setResultItems] = useState<AutocompleteResultItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isNoResults, setIsNoResults] = useState<boolean>(false);
-  const [error, setError] = useState<string>();
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(-1);
+  const [state, dispatch] = useReducer(autocompleteStateReducer, {
+    resultItems: [],
+    isLoading: false,
+    isNoResults: false,
+    error: undefined,
+  });
 
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
       const searchResponse = await props.search(query);
-      setIsLoading(false);
-
-      if (searchResponse.error) {
-        setIsNoResults(false);
-        setError(searchResponse.error);
-        return;
-      }
-
-      setError(undefined);
       setSelectedResultIndex(-1);
 
+      if (searchResponse.error) {
+        return dispatch({ type: ActionTypes.SEARCH_WITH_ERROR, payload: searchResponse.error });
+      }
+
       if (searchResponse.results.length > 0) {
-        setResultItems(searchResponse.results);
-        setIsNoResults(false);
+        dispatch({ type: ActionTypes.SEARCH_WITH_RESULT, payload: searchResponse.results });
       } else {
-        setIsNoResults(true);
-        setResultItems([]);
+        dispatch({ type: ActionTypes.SEARCH_WITHOUT_RESULT });
       }
     }, 500),
     []
@@ -61,18 +107,16 @@ export const Autocomplete = (props: AutocompleteProps) => {
     setSearchValue(newSearchValue);
 
     if (newSearchValue.length >= 3) {
-      setIsLoading(true);
       debouncedSearch(newSearchValue);
+      dispatch({ type: ActionTypes.CHANGE_GTE_3 });
     } else {
       debouncedSearch.cancel();
-      setIsLoading(false);
-      setError(undefined);
-      setResultItems([]);
+      dispatch({ type: ActionTypes.CHANGE_LT_3 });
     }
   };
 
   const onKeyDown = (key: string, preventDefault: () => any) => {
-    if (resultItems.length === 0) {
+    if (state.resultItems.length === 0) {
       return;
     }
 
@@ -80,7 +124,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
       case "ArrowDown": {
         preventDefault();
         setSelectedResultIndex((previousIndex) => {
-          if (previousIndex !== resultItems.length - 1) {
+          if (previousIndex !== state.resultItems.length - 1) {
             return previousIndex + 1;
           }
           return previousIndex;
@@ -98,7 +142,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
         break;
       }
       case "Enter": {
-        const item = resultItems[selectedResultIndex];
+        const item = state.resultItems[selectedResultIndex];
         if (item?.url) {
           window.open(item.url, "_newtab");
         }
@@ -106,7 +150,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
     }
   };
 
-  const showResultBox = resultItems.length > 0 || isNoResults || error;
+  const showResultBox = state.resultItems.length > 0 || state.isNoResults || state.error;
 
   return (
     <AutocompleteContainer>
@@ -117,22 +161,22 @@ export const Autocomplete = (props: AutocompleteProps) => {
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e.key, () => e.preventDefault())}
         />
-        <Indicator>{isLoading && <RiLoader4Line size={18} />}</Indicator>
+        <Indicator>{state.isLoading && <RiLoader4Line size={18} />}</Indicator>
       </InputContainer>
       {showResultBox && (
         <ResultBox>
-          {resultItems.map((result, i) => (
+          {state.resultItems.map((result, i) => (
             <ResultItem
               result={result}
               active={selectedResultIndex === i}
               key={result.url + result.displayText}
             />
           ))}
-          {isNoResults && <NoResults>No results found 🙄</NoResults>}
-          {error && (
+          {state.isNoResults && <NoResults>No results found 🙄</NoResults>}
+          {state.error && (
             <ErrorMessage>
               <h3>Something went wrong ⚠</h3>
-              <p>{error}</p>
+              <p>{state.error}</p>
             </ErrorMessage>
           )}
         </ResultBox>
@@ -175,7 +219,7 @@ const rotate = keyframes`
 
 const AutocompleteContainer = styled.div`
   width: 100%;
-  max-width: 370px;
+  max-width: 400px;
   display: grid;
   gap: 10px;
   align-items: end;
@@ -218,7 +262,7 @@ const ResultBox = styled.div`
   width: 100%;
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  max-height: 280px;
+  max-height: 300px;
   overflow: auto;
 `;
 
