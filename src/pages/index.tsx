@@ -11,11 +11,9 @@ export default () => {
 };
 
 const Home = styled.div`
-  width: 100%;
-  min-height: 100vh;
-
   display: grid;
-  align-items: center;
+  align-items: start;
   justify-items: center;
-  padding: 50px;
+  margin-top: 80px;
+  padding: 20px;
 `;

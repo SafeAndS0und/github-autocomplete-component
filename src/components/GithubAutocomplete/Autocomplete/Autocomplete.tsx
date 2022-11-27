@@ -52,7 +52,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
         setIsNoResults(true);
         setResultItems([]);
       }
-    }, 500),
+    }, 400),
     []
   );
 
@@ -173,12 +173,15 @@ const rotate = keyframes`
 `;
 
 const AutocompleteContainer = styled.div`
-  width: 370px;
-  max-width: 100%;
-  position: relative;
+  width: 100%;
+  max-width: 370px;
+  display: grid;
+  gap: 10px;
+  align-items: end;
 `;
 
 const InputContainer = styled.div`
+  width: 100%;
   outline: 1px solid #acacac;
   border-radius: 3px;
   display: grid;
@@ -211,9 +214,6 @@ const Indicator = styled.div`
 `;
 
 const ResultBox = styled.div`
-  position: absolute;
-  top: 65px;
-  left: 0;
   width: 100%;
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);

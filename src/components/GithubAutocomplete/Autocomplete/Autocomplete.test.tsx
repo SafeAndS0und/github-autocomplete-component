@@ -41,10 +41,10 @@ describe("Autocomplete.tsx", () => {
     const input = getByPlaceholderText("Repository or username...");
 
     fireEvent.change(input, { target: { value: "Tes" } });
-    await waitFor(() => expect(handleChange).toHaveBeenCalledTimes(1), { timeout: 600 });
+    await waitFor(() => expect(handleChange).toHaveBeenCalledTimes(1), { timeout: 500 });
 
     fireEvent.change(input, { target: { value: "Test" } });
-    await waitFor(() => expect(handleChange).toHaveBeenCalledTimes(2), { timeout: 600 });
+    await waitFor(() => expect(handleChange).toHaveBeenCalledTimes(2), { timeout: 500 });
   });
 
   it("fetches and displays results properly", async () => {

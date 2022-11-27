@@ -39,8 +39,8 @@ export const searchUsersAndRepositories = (urls: string[]) => async (query: stri
 };
 
 const githubEndpoints = [
-  "https://api.github.com/search/users?per_page=50&page=1",
-  "https://api.github.com/search/repositories?per_page=50&page=1",
+  "https://api.github.com/search/users?per_page=25&page=1",
+  "https://api.github.com/search/repositories?per_page=25&page=1",
 ];
 
 // This is a concrete implementation of the Autocomplete component that fetches Github users/repos specifically
