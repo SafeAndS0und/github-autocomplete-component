@@ -1,4 +1,4 @@
-#Github repositories and users autocomplete component
+# Github repositories and users autocomplete component
 This project presents an Autocomplete component made as a recruitment coding challenge.
 
 ## Approach to the problem
