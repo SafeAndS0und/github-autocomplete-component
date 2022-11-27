@@ -14,6 +14,6 @@ const Home = styled.div`
   display: grid;
   align-items: start;
   justify-items: center;
-  margin-top: 80px;
+  margin-top: 40px;
   padding: 20px;
 `;

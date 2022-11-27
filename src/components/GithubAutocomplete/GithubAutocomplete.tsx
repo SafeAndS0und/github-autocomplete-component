@@ -22,10 +22,17 @@ const parseGithubResponse = (githubResponse: unknown): AutocompleteResultItem[] 
 };
 
 const prepareUrls = (urls: string[], query: string) => {
-  return urls.map((initialUrl) => {
+  return urls.map(async (initialUrl) => {
     const url = new URL(initialUrl);
     url.searchParams.set("q", query);
-    return fetch(url).then((res) => res.json());
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err?.message || "Github API responded with status: " + response.status);
+    }
+
+    return response.json();
   });
 };
 

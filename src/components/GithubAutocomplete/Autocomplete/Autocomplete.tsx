@@ -38,6 +38,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
       setIsLoading(false);
 
       if (searchResponse.error) {
+        setIsNoResults(false);
         setError(searchResponse.error);
         return;
       }
@@ -52,7 +53,7 @@ export const Autocomplete = (props: AutocompleteProps) => {
         setIsNoResults(true);
         setResultItems([]);
       }
-    }, 400),
+    }, 500),
     []
   );
 
