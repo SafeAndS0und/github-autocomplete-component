@@ -26,33 +26,24 @@ interface ReducerState {
 }
 
 enum ActionTypes {
-  CHANGE_LT_3 = "CHANGE_LT_3",
-  CHANGE_GTE_3 = "CHANGE_GTE_3",
+  ON_CHANGE_LT_3 = "ON_CHANGE_LT_3",
+  ON_CHANGE_GTE_3 = "ON_CHANGE_GTE_3",
   SEARCH_WITH_RESULT = "SEARCH_WITH_RESULT",
   SEARCH_WITHOUT_RESULT = "SEARCH_WITHOUT_RESULT",
   SEARCH_WITH_ERROR = "SEARCH_WITH_ERROR",
 }
 
 type ReducerActions =
-  | { type: ActionTypes.CHANGE_LT_3 }
-  | { type: ActionTypes.CHANGE_GTE_3 }
   | { type: ActionTypes.SEARCH_WITH_RESULT; payload: AutocompleteResultItem[] }
   | { type: ActionTypes.SEARCH_WITHOUT_RESULT }
-  | { type: ActionTypes.SEARCH_WITH_ERROR; payload: string };
+  | { type: ActionTypes.SEARCH_WITH_ERROR; payload: string }
+  | { type: ActionTypes.ON_CHANGE_LT_3 }
+  | { type: ActionTypes.ON_CHANGE_GTE_3 };
 
 // Using reducer since there is a lot of dependency between these values
 // and it's easier to control and see what a given action causes
 const autocompleteStateReducer = (state: ReducerState, action: ReducerActions) => {
   switch (action.type) {
-    case ActionTypes.CHANGE_LT_3:
-      return { isLoading: false, isNoResults: false, resultItems: [], error: undefined };
-    case ActionTypes.CHANGE_GTE_3:
-      return {
-        isLoading: true,
-        isNoResults: state.isNoResults,
-        resultItems: state.resultItems,
-        error: state.error,
-      };
     case ActionTypes.SEARCH_WITH_RESULT:
       return {
         isLoading: false,
@@ -64,6 +55,15 @@ const autocompleteStateReducer = (state: ReducerState, action: ReducerActions) =
       return { isLoading: false, isNoResults: true, resultItems: [], error: undefined };
     case ActionTypes.SEARCH_WITH_ERROR:
       return { isLoading: false, isNoResults: false, resultItems: [], error: action.payload };
+    case ActionTypes.ON_CHANGE_LT_3:
+      return { isLoading: false, isNoResults: false, resultItems: [], error: undefined };
+    case ActionTypes.ON_CHANGE_GTE_3:
+      return {
+        isLoading: true,
+        isNoResults: state.isNoResults,
+        resultItems: state.resultItems,
+        error: state.error,
+      };
     default:
       return { isLoading: false, isNoResults: false, resultItems: [], error: undefined };
   }
@@ -108,10 +108,10 @@ export const Autocomplete = (props: AutocompleteProps) => {
 
     if (newSearchValue.length >= 3) {
       debouncedSearch(newSearchValue);
-      dispatch({ type: ActionTypes.CHANGE_GTE_3 });
+      dispatch({ type: ActionTypes.ON_CHANGE_GTE_3 });
     } else {
       debouncedSearch.cancel();
-      dispatch({ type: ActionTypes.CHANGE_LT_3 });
+      dispatch({ type: ActionTypes.ON_CHANGE_LT_3 });
     }
   };
 

@@ -1,6 +1,8 @@
 # Github repositories and users autocomplete component
 This project presents an Autocomplete component made as a recruitment coding challenge.
 
+Live: https://safeands0und.github.io/github-autocomplete-component
+
 ## Approach to the problem
 My understanding of "reusable and self-contained autocomplete component" was that the component itself should be able to 
 handle all kinds of data and that Github users / repositories is only one of them.
